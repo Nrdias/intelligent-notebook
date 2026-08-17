@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "326437288177",
+    "project_id": "intelligent-notebook",
+    "storage_bucket": "intelligent-notebook.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:326437288177:android:a50df870890c38d7b71150",
+        "android_client_info": {
+          "package_name": "com.nrd.intelligentNotebook"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "326437288177-232r18et737c4b24f7s9gl7i123osabd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.nrd.intelligentNotebook",
+            "certificate_hash": "35c444855214516a8411aa1467f4baef8d63172f"
+          }
+        },
+        {
+          "client_id": "326437288177-s2tsmhqsto08nsnm3pd8et618jo8sh9m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcOFRhgFeQodVxEpoFo-wv3wJvmaNwXDw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "326437288177-s2tsmhqsto08nsnm3pd8et618jo8sh9m.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "326437288177-se84rjdsh88thu2ti37p48jvfriisueu.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.nrd.intelligentNotebook"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

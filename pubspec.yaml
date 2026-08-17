@@ -1,0 +1,67 @@
+name: intelligent_notebook
+description: A smart notebook app — notes, canvas, calendar, and AI chat.
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.4.0
+
+  # Navigation
+  go_router: ^14.0.0
+
+  # Firebase
+  firebase_core: ^3.1.0
+  firebase_auth: ^5.7.0
+  cloud_firestore: ^5.1.0
+  firebase_storage: ^12.0.0
+
+  # Google Sign-In & Calendar
+  google_sign_in: ^6.2.0
+  googleapis: ^12.0.0
+  googleapis_auth: ^1.6.0
+
+  # Local Storage (offline cache)
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Markdown rendering
+  flutter_markdown: ^0.7.0
+  markdown: ^7.2.0
+
+  # Utils
+  uuid: ^4.4.0
+  intl: ^0.20.2
+  path_provider: ^2.1.2
+  http: ^1.2.0
+  get_it: ^9.2.1
+  perfect_freehand: ^2.5.2+1
+  equatable: ^2.1.0
+  firebase_crashlytics: ^4.3.10
+  jovial_svg: ^1.1.29
+  pdfrx: ^1.1.0
+  file_picker: ^8.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.0
+  riverpod_generator: ^2.4.0
+  custom_lint: ^0.6.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/icons/
