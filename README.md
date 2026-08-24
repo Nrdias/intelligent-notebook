@@ -133,17 +133,6 @@ This app uses [`jovial_svg`](https://pub.dev/packages/jovial_svg) to convert SVG
 - Get an API key from https://aistudio.google.com/
 - For production, proxy through Firebase Cloud Functions to hide the key
 
-## Free Tier Limits
-
-| Service | Free Tier |
-|---|---|
-| Firebase Auth | 10,000 users/month |
-| Firestore | 1 GiB storage, 50K reads/day |
-| Firebase Storage | 5 GiB |
-| Cloud Functions | 2M invocations/month |
-| Gemini API | 15 RPM, 1M tokens/month |
-| Google Calendar API | 10,000 requests/day |
-
 ## License
 
 MIT
