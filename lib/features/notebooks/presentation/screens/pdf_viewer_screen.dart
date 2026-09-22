@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import '../../../../l10n/app_localizations.dart';
+import '../../../canvas/presentation/providers/canvas_provider.dart';
 import '../../../canvas/presentation/widgets/drawing_canvas.dart';
 import '../../../canvas/presentation/widgets/toolbar.dart';
 import '../../domain/entities/page.dart' as domain_page;
@@ -20,6 +21,20 @@ class PdfViewerScreen extends ConsumerStatefulWidget {
 class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   final PdfViewerController _pdfController = PdfViewerController();
   bool _isDrawingMode = true;
+  late final CanvasNotifier _canvasNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _canvasNotifier = ref.read(canvasStateProvider.notifier);
+    _canvasNotifier.resetAndLoadCanvas(widget.page.id);
+  }
+
+  @override
+  void dispose() {
+    _canvasNotifier.disposeCanvas();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

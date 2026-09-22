@@ -85,8 +85,8 @@ class HiveDrawingDataSource {
             'HiveDrawingDataSource.getDrawing: drawing for page $pageId not found');
         return failure(DrawingFailure.notFound);
       }
-      final drawing =
-          DrawingModel.fromJson(value as Map<String, dynamic>).toDomain();
+      final map = Map<String, dynamic>.from(value as Map);
+      final drawing = DrawingModel.fromJson(map).toDomain();
       return success(drawing);
     } catch (e, stack) {
       AppLoggerImpl.instance.error('HiveDrawingDataSource.getDrawing failed',

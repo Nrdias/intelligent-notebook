@@ -18,6 +18,20 @@ class NotebookRepositoryImpl implements NotebookRepository {
 
   @override
   Future<Result<List<Notebook>, NotebookFailure>> getAll() async {
+    final localResult = hiveDataSource.getAll();
+    if (localResult case Success(:final data) when data.isNotEmpty) {
+      // In background, sync fresh data from Firestore and update local cache
+      firestoreDataSource.getAll().then((remoteResult) {
+        if (remoteResult case Success(:final data)) {
+          for (final notebook in data) {
+            hiveDataSource.create(notebook);
+          }
+        }
+      }).catchError((_) {});
+
+      return localResult;
+    }
+
     final remoteResult = await firestoreDataSource.getAll();
     if (remoteResult case Success(:final data)) {
       for (final notebook in data) {
@@ -26,28 +40,28 @@ class NotebookRepositoryImpl implements NotebookRepository {
       return remoteResult;
     }
 
-    final localResult = hiveDataSource.getAll();
-    if (localResult case Failure(:final failure)) {
-      AppLoggerImpl.instance.failure(
-          'NotebookRepositoryImpl.getAll failure: ${failure.message}');
-      return Failure(failure);
-    }
     return localResult;
   }
 
   @override
   Future<Result<Notebook, NotebookFailure>> getById(String id) async {
+    final localResult = hiveDataSource.getById(id);
+    if (localResult case Success()) {
+      firestoreDataSource.getById(id).then((remoteResult) {
+        if (remoteResult case Success(:final data)) {
+          hiveDataSource.create(data);
+        }
+      }).catchError((_) {});
+
+      return localResult;
+    }
+
     final remoteResult = await firestoreDataSource.getById(id);
-    if (remoteResult case Success()) {
+    if (remoteResult case Success(:final data)) {
+      await hiveDataSource.create(data);
       return remoteResult;
     }
 
-    final localResult = hiveDataSource.getById(id);
-    if (localResult case Failure(:final failure)) {
-      AppLoggerImpl.instance.failure(
-          'NotebookRepositoryImpl.getById failure: ${failure.message}');
-      return Failure(failure);
-    }
     return localResult;
   }
 
@@ -59,12 +73,17 @@ class NotebookRepositoryImpl implements NotebookRepository {
           'NotebookRepositoryImpl.create (Hive) failure: ${failure.message}');
       return Failure(failure);
     }
-    final firestoreResult = await firestoreDataSource.create(notebook);
-    if (firestoreResult case Failure(:final failure)) {
+
+    firestoreDataSource.create(notebook).then((firestoreResult) {
+      if (firestoreResult case Failure(:final failure)) {
+        AppLoggerImpl.instance.failure(
+            'NotebookRepositoryImpl.create (Firestore) failure: ${failure.message}');
+      }
+    }).catchError((e) {
       AppLoggerImpl.instance.failure(
-          'NotebookRepositoryImpl.create (Firestore) failure: ${failure.message}');
-      return Failure(failure);
-    }
+          'NotebookRepositoryImpl.create (Firestore) error: $e');
+    });
+
     return success(null);
   }
 
@@ -76,12 +95,17 @@ class NotebookRepositoryImpl implements NotebookRepository {
           'NotebookRepositoryImpl.update (Hive) failure: ${failure.message}');
       return Failure(failure);
     }
-    final firestoreResult = await firestoreDataSource.update(notebook);
-    if (firestoreResult case Failure(:final failure)) {
+
+    firestoreDataSource.update(notebook).then((firestoreResult) {
+      if (firestoreResult case Failure(:final failure)) {
+        AppLoggerImpl.instance.failure(
+            'NotebookRepositoryImpl.update (Firestore) failure: ${failure.message}');
+      }
+    }).catchError((e) {
       AppLoggerImpl.instance.failure(
-          'NotebookRepositoryImpl.update (Firestore) failure: ${failure.message}');
-      return Failure(failure);
-    }
+          'NotebookRepositoryImpl.update (Firestore) error: $e');
+    });
+
     return success(null);
   }
 
@@ -93,29 +117,39 @@ class NotebookRepositoryImpl implements NotebookRepository {
           'NotebookRepositoryImpl.delete (Hive) failure: ${failure.message}');
       return Failure(failure);
     }
-    final firestoreResult = await firestoreDataSource.delete(id);
-    if (firestoreResult case Failure(:final failure)) {
+
+    firestoreDataSource.delete(id).then((firestoreResult) {
+      if (firestoreResult case Failure(:final failure)) {
+        AppLoggerImpl.instance.failure(
+            'NotebookRepositoryImpl.delete (Firestore) failure: ${failure.message}');
+      }
+    }).catchError((e) {
       AppLoggerImpl.instance.failure(
-          'NotebookRepositoryImpl.delete (Firestore) failure: ${failure.message}');
-      return Failure(failure);
-    }
+          'NotebookRepositoryImpl.delete (Firestore) error: $e');
+    });
+
     return success(null);
   }
 
   @override
   Future<Result<List<Page>, NotebookFailure>> getPages(
       String notebookId) async {
+    final localResult = hiveDataSource.getPages(notebookId);
+    if (localResult case Success(:final data) when data.isNotEmpty) {
+      firestoreDataSource.getPages(notebookId).then((remoteResult) {
+        if (remoteResult case Success()) {
+          // background sync
+        }
+      }).catchError((_) {});
+
+      return localResult;
+    }
+
     final remoteResult = await firestoreDataSource.getPages(notebookId);
     if (remoteResult case Success()) {
       return remoteResult;
     }
 
-    final localResult = hiveDataSource.getPages(notebookId);
-    if (localResult case Failure(:final failure)) {
-      AppLoggerImpl.instance.failure(
-          'NotebookRepositoryImpl.getPages failure: ${failure.message}');
-      return Failure(failure);
-    }
     return localResult;
   }
 
@@ -127,12 +161,17 @@ class NotebookRepositoryImpl implements NotebookRepository {
           'NotebookRepositoryImpl.savePage (Hive) failure: ${failure.message}');
       return Failure(failure);
     }
-    final firestoreResult = await firestoreDataSource.savePage(page);
-    if (firestoreResult case Failure(:final failure)) {
+
+    firestoreDataSource.savePage(page).then((firestoreResult) {
+      if (firestoreResult case Failure(:final failure)) {
+        AppLoggerImpl.instance.failure(
+            'NotebookRepositoryImpl.savePage (Firestore) failure: ${failure.message}');
+      }
+    }).catchError((e) {
       AppLoggerImpl.instance.failure(
-          'NotebookRepositoryImpl.savePage (Firestore) failure: ${failure.message}');
-      return Failure(failure);
-    }
+          'NotebookRepositoryImpl.savePage (Firestore) error: $e');
+    });
+
     return success(null);
   }
 
@@ -145,13 +184,17 @@ class NotebookRepositoryImpl implements NotebookRepository {
           'NotebookRepositoryImpl.deletePage (Hive) failure: ${failure.message}');
       return Failure(failure);
     }
-    final firestoreResult =
-        await firestoreDataSource.deletePage(notebookId, pageId);
-    if (firestoreResult case Failure(:final failure)) {
+
+    firestoreDataSource.deletePage(notebookId, pageId).then((firestoreResult) {
+      if (firestoreResult case Failure(:final failure)) {
+        AppLoggerImpl.instance.failure(
+            'NotebookRepositoryImpl.deletePage (Firestore) failure: ${failure.message}');
+      }
+    }).catchError((e) {
       AppLoggerImpl.instance.failure(
-          'NotebookRepositoryImpl.deletePage (Firestore) failure: ${failure.message}');
-      return Failure(failure);
-    }
+          'NotebookRepositoryImpl.deletePage (Firestore) error: $e');
+    });
+
     return success(null);
   }
 }

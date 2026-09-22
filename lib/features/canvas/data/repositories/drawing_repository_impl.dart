@@ -17,34 +17,50 @@ class DrawingRepositoryImpl implements DrawingRepository {
 
   @override
   Future<Result<void, DrawingFailure>> saveDrawing(Drawing drawing) async {
+    // 1. Write immediately to local Hive cache (Offline-First Source of Truth)
     final hiveResult = await hiveDataSource.saveDrawing(drawing);
     if (hiveResult case Failure(:final failure)) {
       AppLoggerImpl.instance.failure(
           'DrawingRepositoryImpl.saveDrawing (Hive) failure: ${failure.message}');
       return Failure(failure);
     }
-    final firestoreResult = await firestoreDataSource.saveDrawing(drawing);
-    if (firestoreResult case Failure(:final failure)) {
+
+    // 2. Simultaneously sync to Firestore remote database asynchronously
+    firestoreDataSource.saveDrawing(drawing).then((firestoreResult) {
+      if (firestoreResult case Failure(:final failure)) {
+        AppLoggerImpl.instance.failure(
+            'DrawingRepositoryImpl.saveDrawing (Firestore) failure: ${failure.message}');
+      }
+    }).catchError((e) {
       AppLoggerImpl.instance.failure(
-          'DrawingRepositoryImpl.saveDrawing (Firestore) failure: ${failure.message}');
-      return Failure(failure);
-    }
+          'DrawingRepositoryImpl.saveDrawing (Firestore) error: $e');
+    });
+
     return success(null);
   }
 
   @override
   Future<Result<Drawing, DrawingFailure>> getDrawing(String pageId) async {
+    // 1. Return local Hive cache instantly
+    final localResult = hiveDataSource.getDrawing(pageId);
+    if (localResult case Success()) {
+      // In background, sync from Firestore to update local cache
+      firestoreDataSource.getDrawing(pageId).then((remoteResult) {
+        if (remoteResult case Success(:final data)) {
+          hiveDataSource.saveDrawing(data);
+        }
+      }).catchError((_) {});
+
+      return localResult;
+    }
+
+    // 2. Fallback to remote Firestore if local is missing
     final remoteResult = await firestoreDataSource.getDrawing(pageId);
-    if (remoteResult case Success()) {
+    if (remoteResult case Success(:final data)) {
+      await hiveDataSource.saveDrawing(data);
       return remoteResult;
     }
 
-    final localResult = hiveDataSource.getDrawing(pageId);
-    if (localResult case Failure(:final failure)) {
-      AppLoggerImpl.instance.failure(
-          'DrawingRepositoryImpl.getDrawing failure: ${failure.message}');
-      return Failure(failure);
-    }
     return localResult;
   }
 
@@ -56,12 +72,17 @@ class DrawingRepositoryImpl implements DrawingRepository {
           'DrawingRepositoryImpl.deleteDrawing (Hive) failure: ${failure.message}');
       return Failure(failure);
     }
-    final firestoreResult = await firestoreDataSource.deleteDrawing(pageId);
-    if (firestoreResult case Failure(:final failure)) {
+
+    firestoreDataSource.deleteDrawing(pageId).then((firestoreResult) {
+      if (firestoreResult case Failure(:final failure)) {
+        AppLoggerImpl.instance.failure(
+            'DrawingRepositoryImpl.deleteDrawing (Firestore) failure: ${failure.message}');
+      }
+    }).catchError((e) {
       AppLoggerImpl.instance.failure(
-          'DrawingRepositoryImpl.deleteDrawing (Firestore) failure: ${failure.message}');
-      return Failure(failure);
-    }
+          'DrawingRepositoryImpl.deleteDrawing (Firestore) error: $e');
+    });
+
     return success(null);
   }
 

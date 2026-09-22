@@ -35,7 +35,7 @@ class NotebookModel {
         description: json['description'] as String? ?? '',
         color: json['color'] as String? ?? '#6750A4',
         pages: (json['pages'] as List<dynamic>?)
-                ?.map((p) => PageModel.fromJson(p as Map<String, dynamic>))
+                ?.map((p) => PageModel.fromJson(Map<String, dynamic>.from(p as Map)))
                 .toList() ??
             [],
         createdAt: DateTime.parse(json['createdAt'] as String),

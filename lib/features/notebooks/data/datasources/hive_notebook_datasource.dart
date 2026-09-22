@@ -71,6 +71,7 @@ extension PageHiveExtension on Page {
         'markdownContent': markdownContent,
         'blocks': blocks.map((b) => b.toJson()).toList(),
         'thumbnailUrl': thumbnailUrl,
+        'pdfPath': pdfPath,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
         'isPinned': isPinned,
@@ -106,7 +107,7 @@ class HiveNotebookDataSource {
     try {
       final values = _notesBox.values.toList();
       final notebooks = values
-          .map((v) => NotebookModel.fromJson(v as Map<String, dynamic>).toDomain())
+          .map((v) => NotebookModel.fromJson(Map<String, dynamic>.from(v as Map)).toDomain())
           .toList();
       return success(notebooks);
     } catch (e, stack) {
@@ -124,7 +125,8 @@ class HiveNotebookDataSource {
             'HiveNotebookDataSource.getById: notebook $id not found');
         return failure(NotebookFailure.notFound);
       }
-      final notebook = NotebookModel.fromJson(value as Map<String, dynamic>).toDomain();
+      final map = Map<String, dynamic>.from(value as Map);
+      final notebook = NotebookModel.fromJson(map).toDomain();
       return success(notebook);
     } catch (e, stack) {
       AppLoggerImpl.instance.error('HiveNotebookDataSource.getById failed',

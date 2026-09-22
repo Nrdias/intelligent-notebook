@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../tools/logger.dart';
 import '../../../../tools/result.dart';
@@ -12,9 +13,12 @@ import '../models/page_model.dart';
 
 class FirestoreNotebookDataSource {
   final FirebaseFirestore _firestore;
-  final String userId;
+  final FirebaseAuth _auth;
 
-  FirestoreNotebookDataSource(this._firestore, this.userId);
+  FirestoreNotebookDataSource(this._firestore, [FirebaseAuth? auth])
+      : _auth = auth ?? FirebaseAuth.instance;
+
+  String get userId => _auth.currentUser?.uid ?? 'guest';
 
   CollectionReference get _notebooksRef =>
       _firestore.collection('users').doc(userId).collection('notebooks');

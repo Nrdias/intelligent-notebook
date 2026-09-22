@@ -83,6 +83,48 @@ class NotebookDetailNotifier extends StateNotifier<NotebookDetailState> {
       pages = notebook.pages;
     }
 
+    // Self-healing for legacy PDF pages that lost pdfPath in Hive storage
+    final healedPages = <Page>[];
+    Directory? pdfDir;
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      pdfDir = Directory('${appDir.path}/notebook_pdfs/$notebookId');
+    } catch (_) {}
+
+    for (final p in pages) {
+      if (!p.isPdf && pdfDir != null && await pdfDir.exists()) {
+        final pdfFiles = pdfDir.listSync().whereType<File>().toList();
+        if (pdfFiles.isNotEmpty) {
+          File? matched;
+          for (final f in pdfFiles) {
+            final filename = f.path.split('/').last;
+            if (filename.contains(p.title) || p.title.contains(filename)) {
+              matched = f;
+              break;
+            }
+          }
+          matched ??= pdfFiles.last;
+          final updatedPage = Page(
+            id: p.id,
+            notebookId: p.notebookId,
+            title: p.title,
+            markdownContent: p.markdownContent,
+            blocks: p.blocks,
+            thumbnailUrl: p.thumbnailUrl,
+            pdfPath: matched.path,
+            createdAt: p.createdAt,
+            updatedAt: p.updatedAt,
+            isPinned: p.isPinned,
+          );
+          await _repository.savePage(updatedPage);
+          healedPages.add(updatedPage);
+          continue;
+        }
+      }
+      healedPages.add(p);
+    }
+    pages = healedPages;
+
     state = state.copyWith(
       notebook: notebook,
       pages: pages,

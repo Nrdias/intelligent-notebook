@@ -30,15 +30,19 @@ class DrawingModel {
       };
 
   factory DrawingModel.fromJson(Map<String, dynamic> json) => DrawingModel(
-        id: json['id'] as String,
-        pageId: json['pageId'] as String,
-        notebookId: json['notebookId'] as String,
-        strokes: (json['strokes'] as List<dynamic>)
-            .map((s) => StrokeModel.fromJson(s as Map<String, dynamic>))
+        id: json['id'] as String? ?? '',
+        pageId: json['pageId'] as String? ?? '',
+        notebookId: json['notebookId'] as String? ?? '',
+        strokes: (json['strokes'] as List<dynamic>? ?? [])
+            .map((s) => StrokeModel.fromJson(Map<String, dynamic>.from(s as Map)))
             .toList(),
         thumbnailUrl: json['thumbnailUrl'] as String? ?? '',
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        updatedAt: DateTime.parse(json['updatedAt'] as String),
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'] as String)
+            : DateTime.now(),
+        updatedAt: json['updatedAt'] != null
+            ? DateTime.parse(json['updatedAt'] as String)
+            : DateTime.now(),
       );
 
   String toBase64Json() => base64Encode(utf8.encode(jsonEncode(toJson())));
@@ -74,11 +78,11 @@ class StrokeModel {
       };
 
   factory StrokeModel.fromJson(Map<String, dynamic> json) => StrokeModel(
-        points: (json['points'] as List<dynamic>)
-            .map((p) => OffsetPoint.fromJson(p as Map<String, dynamic>))
+        points: (json['points'] as List<dynamic>? ?? [])
+            .map((p) => OffsetPoint.fromJson(Map<String, dynamic>.from(p as Map)))
             .toList(),
-        strokeWidth: (json['strokeWidth'] as num).toDouble(),
-        color: json['color'] as int,
+        strokeWidth: (json['strokeWidth'] as num?)?.toDouble() ?? 3.0,
+        color: (json['color'] as num?)?.toInt() ?? 0xFFFFFFFF,
         isEraser: json['isEraser'] as bool? ?? false,
         isHighlighter: json['isHighlighter'] as bool? ?? false,
         pressure: (json['pressure'] as num?)?.toDouble() ?? 1.0,
@@ -99,8 +103,8 @@ class OffsetPoint {
       };
 
   factory OffsetPoint.fromJson(Map<String, dynamic> json) => OffsetPoint(
-        x: json['x'] as double,
-        y: json['y'] as double,
-        pressure: json['pressure'] as double? ?? 1.0,
+        x: (json['x'] as num).toDouble(),
+        y: (json['y'] as num).toDouble(),
+        pressure: (json['pressure'] as num?)?.toDouble() ?? 1.0,
       );
 }

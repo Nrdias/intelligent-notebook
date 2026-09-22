@@ -44,7 +44,7 @@ class PageModel {
         title: json['title'] as String,
         markdownContent: json['markdownContent'] as String? ?? '',
         blocks: (json['blocks'] as List<dynamic>?)
-                ?.map((b) => BlockModel.fromJson(b as Map<String, dynamic>))
+                ?.map((b) => BlockModel.fromJson(Map<String, dynamic>.from(b as Map)))
                 .toList() ??
             const [],
         thumbnailUrl: json['thumbnailUrl'] as String?,

@@ -99,7 +99,7 @@ Future<void> initDependencies() async {
     () => NotebookRepositoryImpl(
       firestoreDataSource: FirestoreNotebookDataSource(
         getIt<FirebaseFirestore>(),
-        getIt<FirebaseAuth>().currentUser?.uid ?? 'guest',
+        getIt<FirebaseAuth>(),
       ),
       hiveDataSource: HiveNotebookDataSource.instance,
     ),
@@ -110,7 +110,7 @@ Future<void> initDependencies() async {
     () => DrawingRepositoryImpl(
       firestoreDataSource: FirestoreDrawingDataSource(
         getIt<FirebaseFirestore>(),
-        getIt<FirebaseAuth>().currentUser?.uid ?? 'guest',
+        getIt<FirebaseAuth>(),
       ),
       hiveDataSource: HiveDrawingDataSource.instance,
     ),

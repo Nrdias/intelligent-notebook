@@ -264,33 +264,49 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
     return null;
   }
 
-  void loadCanvas(String pageId) async {
-    state = state.copyWith(pageId: pageId, isDirty: false);
+  void resetAndLoadCanvas(String pageId) async {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = null;
+    _undoStack.clear();
+    _redoStack.clear();
+
+    state = CanvasState(
+      pageId: pageId,
+      currentStrokes: const [],
+      isDirty: false,
+      canUndo: false,
+      canRedo: false,
+    );
+
     _startAutoSaveTimer();
 
     final repo = _drawingRepo;
     if (repo != null) {
       final result = await repo.getDrawing(pageId);
       if (result case Success(:final data)) {
-        final loadedStrokes = data.strokes
-            .map((s) => Stroke(
-                  points: s.points
-                      .map((p) => OffsetPoint(x: p.x, y: p.y, pressure: p.pressure))
-                      .toList(),
-                  strokeWidth: s.strokeWidth,
-                  color: s.color,
-                  isEraser: s.isEraser,
-                  isHighlighter: s.isHighlighter,
-                  pressure: s.pressure,
-                ))
-            .toList();
-        state = state.copyWith(
-          currentStrokes: loadedStrokes,
-          isDirty: false,
-        );
+        if (state.pageId == pageId) {
+          final loadedStrokes = data.strokes
+              .map((s) => Stroke(
+                    points: s.points
+                        .map((p) => OffsetPoint(x: p.x, y: p.y, pressure: p.pressure))
+                        .toList(),
+                    strokeWidth: s.strokeWidth,
+                    color: s.color,
+                    isEraser: s.isEraser,
+                    isHighlighter: s.isHighlighter,
+                    pressure: s.pressure,
+                  ))
+              .toList();
+          state = state.copyWith(
+            currentStrokes: loadedStrokes,
+            isDirty: false,
+          );
+        }
       }
     }
   }
+
+  void loadCanvas(String pageId) => resetAndLoadCanvas(pageId);
 
   void _startAutoSaveTimer() {
     _autoSaveTimer?.cancel();
@@ -352,6 +368,13 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
     if (state.isDirty) {
       autoSave(force: true);
     }
+  }
+
+  @override
+  void dispose() {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = null;
+    super.dispose();
   }
 
   void _pushUndoSnapshot() {
@@ -778,6 +801,14 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
     if (!state.isDrawing || state.currentStrokes.isEmpty) return;
 
     final lastStroke = state.currentStrokes.last;
+    if (lastStroke.points.isNotEmpty) {
+      final lastPoint = lastStroke.points.last;
+      final dist = (localPos - Offset(lastPoint.x, lastPoint.y)).distance;
+      if (dist < 1.0) {
+        return;
+      }
+    }
+
     final updatedStrokes = [...state.currentStrokes];
     updatedStrokes[updatedStrokes.length - 1] = lastStroke.copyWith(
       points: [

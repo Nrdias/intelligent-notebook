@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../tools/logger.dart';
 import '../../../../tools/result.dart';
@@ -8,9 +9,12 @@ import '../models/drawing_model.dart';
 
 class FirestoreDrawingDataSource {
   final FirebaseFirestore _firestore;
-  final String userId;
+  final FirebaseAuth _auth;
 
-  FirestoreDrawingDataSource(this._firestore, this.userId);
+  FirestoreDrawingDataSource(this._firestore, [FirebaseAuth? auth])
+      : _auth = auth ?? FirebaseAuth.instance;
+
+  String get userId => _auth.currentUser?.uid ?? 'guest';
 
   CollectionReference get _drawingsRef =>
       _firestore.collection('users').doc(userId).collection('drawings');

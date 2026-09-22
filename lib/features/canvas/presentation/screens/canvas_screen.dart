@@ -17,100 +17,81 @@ class CanvasScreen extends ConsumerStatefulWidget {
 }
 
 class _CanvasScreenState extends ConsumerState<CanvasScreen> {
+  late final CanvasNotifier _notifier;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(canvasStateProvider.notifier).loadCanvas(widget.pageId);
-    });
+    _notifier = ref.read(canvasStateProvider.notifier);
+    _notifier.resetAndLoadCanvas(widget.pageId);
   }
 
   @override
   void dispose() {
-    ref.read(canvasStateProvider.notifier).disposeCanvas();
+    _notifier.disposeCanvas();
     super.dispose();
-  }
-
-  String _formatTime(DateTime time) {
-    final h = time.hour.toString().padLeft(2, '0');
-    final m = time.minute.toString().padLeft(2, '0');
-    final s = time.second.toString().padLeft(2, '0');
-    return '$h:$m:$s';
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final canvasState = ref.watch(canvasStateProvider);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF121214),
-      appBar: AppBar(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          _notifier.disposeCanvas();
+        }
+      },
+      child: Scaffold(
         backgroundColor: const Color(0xFF121214),
-        elevation: 0,
-        leading: IconButton(
-          icon: AppSvgIcon.chevron(size: 20, color: Colors.white),
-          tooltip: l10n.back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Canvas',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            if (canvasState.isSaving)
-              const Text(
-                'Saving...',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              )
-            else if (canvasState.lastSavedAt != null && !canvasState.isDirty)
-              Text(
-                'Auto-saved at ${_formatTime(canvasState.lastSavedAt!)}',
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
-              )
-            else if (canvasState.isDirty)
-              const Text(
-                'Unsaved changes',
-                style: TextStyle(fontSize: 11, color: Colors.orangeAccent),
-              ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: AppSvgIcon.save(size: 20, color: Colors.white),
-            tooltip: l10n.save,
-            onPressed: () async {
-              await ref
-                  .read(canvasStateProvider.notifier)
-                  .autoSave(force: true);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.drawingSaved),
-                    duration: const Duration(seconds: 1),
-                  ),
-                );
-              }
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF121214),
+          elevation: 0,
+          leading: IconButton(
+            icon: AppSvgIcon.chevron(size: 20, color: Colors.white),
+            tooltip: l10n.back,
+            onPressed: () {
+              _notifier.autoSave(force: true);
+              Navigator.of(context).pop();
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.more_vert_rounded),
-            tooltip: l10n.moreOptions,
-            onPressed: () {},
+          title: const Text(
+            'Canvas',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const Toolbar(),
-            Expanded(
-              child: DrawingCanvas(pageId: widget.pageId),
+          actions: [
+            IconButton(
+              icon: AppSvgIcon.save(size: 20, color: Colors.white),
+              tooltip: l10n.save,
+              onPressed: () async {
+                await _notifier.autoSave(force: true);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.drawingSaved),
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.more_vert_rounded),
+              tooltip: l10n.moreOptions,
+              onPressed: () {},
             ),
           ],
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              const Toolbar(),
+              Expanded(
+                child: DrawingCanvas(pageId: widget.pageId),
+              ),
+            ],
+          ),
         ),
       ),
     );

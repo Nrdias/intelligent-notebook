@@ -177,6 +177,29 @@ class SmoothStrokePainter extends CustomPainter {
     this.activeSelectionRect,
   });
 
+  List<OffsetPoint> _smoothPoints(List<OffsetPoint> pts) {
+    if (pts.length <= 2) return pts;
+
+    final smoothed = <OffsetPoint>[pts.first];
+    for (var i = 0; i < pts.length - 1; i++) {
+      final p0 = pts[i];
+      final p1 = pts[i + 1];
+
+      final qX = 0.75 * p0.x + 0.25 * p1.x;
+      final qY = 0.75 * p0.y + 0.25 * p1.y;
+      final qPressure = 0.75 * p0.pressure + 0.25 * p1.pressure;
+
+      final rX = 0.25 * p0.x + 0.75 * p1.x;
+      final rY = 0.25 * p0.y + 0.75 * p1.y;
+      final rPressure = 0.25 * p0.pressure + 0.75 * p1.pressure;
+
+      smoothed.add(OffsetPoint(x: qX, y: qY, pressure: qPressure));
+      smoothed.add(OffsetPoint(x: rX, y: rY, pressure: rPressure));
+    }
+    smoothed.add(pts.last);
+    return smoothed;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     canvas.save();
@@ -192,9 +215,11 @@ class SmoothStrokePainter extends CustomPainter {
               ? Color(stroke.color).withValues(alpha: 0.40)
               : Color(stroke.color);
 
+      final pts = _smoothPoints(stroke.points);
+
       // If there is only one point, draw a circle
-      if (stroke.points.length == 1) {
-        final p = stroke.points.first;
+      if (pts.length == 1) {
+        final p = pts.first;
         final paint = Paint()
           ..color = strokeColor
           ..style = PaintingStyle.fill
@@ -212,20 +237,25 @@ class SmoothStrokePainter extends CustomPainter {
         ..isAntiAlias = true;
 
       final path = Path();
-      final pts = stroke.points;
-
       path.moveTo(pts.first.x, pts.first.y);
 
-      for (var i = 1; i < pts.length; i++) {
-        final prev = pts[i - 1];
-        final curr = pts[i];
-        final midX = (prev.x + curr.x) / 2;
-        final midY = (prev.y + curr.y) / 2;
-        path.quadraticBezierTo(prev.x, prev.y, midX, midY);
-      }
+      if (pts.length == 2) {
+        path.lineTo(pts.last.x, pts.last.y);
+      } else {
+        final firstMidX = (pts[0].x + pts[1].x) / 2;
+        final firstMidY = (pts[0].y + pts[1].y) / 2;
+        path.lineTo(firstMidX, firstMidY);
 
-      // ensure path reaches final point
-      path.lineTo(pts.last.x, pts.last.y);
+        for (var i = 1; i < pts.length - 1; i++) {
+          final curr = pts[i];
+          final next = pts[i + 1];
+          final midX = (curr.x + next.x) / 2;
+          final midY = (curr.y + next.y) / 2;
+          path.quadraticBezierTo(curr.x, curr.y, midX, midY);
+        }
+
+        path.lineTo(pts.last.x, pts.last.y);
+      }
 
       canvas.drawPath(path, paint);
     }
